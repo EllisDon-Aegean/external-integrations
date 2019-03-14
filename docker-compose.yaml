@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  rabbit:
+    image: rabbitmq:3-management
+    hostname: rabbit
+    container_name: rabbit_server
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "secret erlang"
+    volumes:
+      - "./rabbitmq.config:/etc/rabbitmq/rabbitmq.config"
+      - "./definitions.json:/etc/rabbitmq/definitions.json"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "25672:25672"
+
+  consumer:
+    image: python-consumer:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile-python-consumer
+    container_name: python_consumer
+    environment:
+      RABBIT_USER: "client"
+      RABBIT_PASS: "guest"
+      RABBIT_HOST: "localhost"
+      RABBIT_PORT: "5672"
+      RABBIT_VHOST: "/client"
+      RABBIT_QUEUE: "client.dev.v1"
+    ports:
+      - "80:80"
+    links:
+      - rabbit
+    depends_on:
+      - rabbit

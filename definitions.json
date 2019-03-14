@@ -1,0 +1,76 @@
+{
+  "rabbit_version":"3.7.12",
+  "users": [
+    {
+      "name":"guest",
+      "password_hash":"fd0GyzAf6C6hmgCJ5VU+TSyzUNlzypPlGb7VDKkqUvJqVxyd",
+      "hashing_algorithm":"rabbit_password_hashing_sha256",
+      "tags":"administrator"
+    },
+    {
+      "name":"client",
+      "password_hash":"fd0GyzAf6C6hmgCJ5VU+TSyzUNlzypPlGb7VDKkqUvJqVxyd",
+      "hashing_algorithm":"rabbit_password_hashing_sha256",
+      "tags":"users"
+    }
+  ],
+  "vhosts": [
+    {
+      "name":"/"
+    },
+    {
+      "name": "/client"
+    }
+  ],
+  "permissions":[
+    {
+      "user":"guest",
+      "vhost":"/",
+      "configure":".*",
+      "write":".*",
+      "read":".*"
+    },
+    {
+      "user":"client",
+      "vhost":"/client",
+      "configure":".*",
+      "write":".*",
+      "read":".*"
+    }
+  ],
+  "parameters":[],
+  "policies":[
+    {"vhost":"/","name":"ha","pattern":"", "definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}},
+    {"vhost":"/client","name":"ha","pattern":"", "definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}}
+  ],
+  "queues":[
+    {
+      "name":"client.dev.v1",
+      "vhost":"/client",
+      "durable":true,
+      "auto_delete":false,
+      "arguments":{}
+    }
+  ],
+  "exchanges":[
+    {
+      "name":"client.fanout",
+      "vhost":"/client",
+      "type":"fanout",
+      "durable":true,
+      "auto_delete":false,
+      "internal":false,
+      "arguments":{}
+    }
+  ],
+  "bindings":[
+    {
+      "source":"client.fanout",
+      "vhost":"/client",
+      "destination":"client.dev.v1",
+      "destination_type":"queue",
+      "routing_key":"fanout",
+      "arguments":{}
+    }
+  ]
+}
