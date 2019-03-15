@@ -1,6 +1,7 @@
 import os
+import time
 import unittest
-from consumers.python.app.app import App
+from consumers.python.app.app_async import AppAsync
 
 class AppTest(unittest.TestCase):
 
@@ -8,7 +9,7 @@ class AppTest(unittest.TestCase):
 
         os.environ["RABBIT_USER"] = "client"
         os.environ["RABBIT_PASS"] = "guest"
-        os.environ["RABBIT_HOST"] = "localhost" 
+        os.environ["RABBIT_HOST"] = "localhost"
         os.environ["RABBIT_PORT"] = "5672"
         os.environ["RABBIT_VHOST"] = "/client"
         os.environ["RABBIT_QUEUE"] = "client.dev.v1"
@@ -17,9 +18,10 @@ class AppTest(unittest.TestCase):
 
     def testApp(self):
 
-        app = App()
+        app = AppAsync()
         app.startApp()
-
+        time.sleep(3)
+        app.stopApp()
 
 if __name__=="__main__":
     unittest.main(verbosity=4)

@@ -29,7 +29,7 @@ class TestRabbitConsumer(unittest.TestCase):
     def test_startConsumer(self):
 
         with self.assertRaises(Exception):
-            RabbitConsumer().startConsumer()
+            RabbitConsumer().startBlockingConsumer()
 
     def test_stopConsumer(self):
 

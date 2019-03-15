@@ -4,7 +4,7 @@ from consumers.python.app.rabbit_consumer import RabbitConsumer
 from consumers.python.app.rabbit_consumer import RabbitConnectionError
 from consumers.python.app.rabbit_consumer import RabbitConsumerError
 
-class App:
+class AppAsync:
 
     def __init__(self):
         self.consumer = None
@@ -13,8 +13,8 @@ class App:
 
         try:
             self.consumer = RabbitConsumer()
-            self.consumer.connect()
-            self.consumer.startBlockingConsumer()
+            self.consumer.asyncConnect()
+            self.consumer.startAsyncConsumer()
         except RabbitConnectionError as e:
             print(e)
         except RabbitConsumerError as e:
