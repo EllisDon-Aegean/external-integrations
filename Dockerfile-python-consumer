@@ -8,6 +8,6 @@ RUN mv consumers/python/requirements.txt . && \
     pip install -r requirements.txt && \
     mkdir -p /var/run/
 
-CMD ["python", "-u", "-m", "consumers.python.consume"]
+CMD ["python", "-u", "-m", "consumers.python.consume_async"]
 
 EXPOSE 80

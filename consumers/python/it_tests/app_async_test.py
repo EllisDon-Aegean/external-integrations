@@ -20,8 +20,6 @@ class AppTest(unittest.TestCase):
 
         app = AppAsync()
         app.startApp()
-        time.sleep(3)
-        app.stopApp()
 
 if __name__=="__main__":
     unittest.main(verbosity=4)

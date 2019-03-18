@@ -19,9 +19,6 @@ class App:
             print(e)
         except RabbitConsumerError as e:
             print(e)
-        except KeyboardInterrupt:
-            print("Received SIGINT: Exiting")
-            sys.exit(0)
         except Exception as e:
             print(e)
 

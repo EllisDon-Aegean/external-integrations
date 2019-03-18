@@ -19,17 +19,5 @@ class AppAsync:
             print(e)
         except RabbitConsumerError as e:
             print(e)
-        except KeyboardInterrupt:
-            print("Received SIGINT: Exiting")
-            sys.exit(0)
-        except Exception as e:
-            print(e)
-
-    def stopApp(self):
-
-        try:
-            self.consumer.stopConsumer()
-            self.consumer.closeChannel
-            self.consumer.closeConnection()
         except Exception as e:
             print(e)
