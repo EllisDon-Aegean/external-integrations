@@ -10,14 +10,9 @@ class AppAsync:
         self.consumer = None
 
     def startApp(self):
-
         try:
             self.consumer = RabbitConsumer()
             self.consumer.asyncConnect()
             self.consumer.startAsyncConsumer()
-        except RabbitConnectionError as e:
-            print(e)
-        except RabbitConsumerError as e:
-            print(e)
         except Exception as e:
             print(e)

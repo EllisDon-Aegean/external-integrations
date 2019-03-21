@@ -8,31 +8,30 @@ from consumers.python.app.rabbit_consumer import RabbitConsumerError
 class TestRabbitConsumer(unittest.TestCase):
 
     def setUp(self):
-
-        os.environ["RABBIT_USER"] = "localhost"
-        os.environ["RABBIT_PASS"] = "dummy"
-        os.environ["RABBIT_HOST"] = "dummy"
-        os.environ["RABBIT_PORT"] = "5672"
-        os.environ["RABBIT_VHOST"] = "dummy"
-        os.environ["RABBIT_QUEUE"] = "dummy"
+        os.environ.update({
+            "RABBIT_USER": "client",
+            "RABBIT_PASS": "guest",
+            "RABBIT_HOST": "localhost",
+            "RABBIT_PORT": "5672",
+            "RABBIT_VHOST": "/client",
+            "RABBIT_QUEUE": "client.dev.v1",
+            "RABBIT_ROUTING": "fanout",
+            "RABBIT_EXCHANGE": "client.fanout"
+        })
 
     def test_instantiation(self):
-
         consumer = RabbitConsumer()
         self.assertEqual(consumer.virtual_host, 'dummy')
 
     def test_connect(self):
-
         with self.assertRaises(RabbitConnectionError):
             RabbitConsumer().connect()
 
     def test_startConsumer(self):
-
         with self.assertRaises(Exception):
             RabbitConsumer().startBlockingConsumer()
 
     def test_stopConsumer(self):
-
         with self.assertRaises(Exception):
             RabbitConsumer().stopConsumer()
 

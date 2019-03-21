@@ -6,18 +6,18 @@ from consumers.python.app.app_async import AppAsync
 class AppTest(unittest.TestCase):
 
     def setUp(self):
-
-        os.environ["RABBIT_USER"] = "client"
-        os.environ["RABBIT_PASS"] = "guest"
-        os.environ["RABBIT_HOST"] = "localhost"
-        os.environ["RABBIT_PORT"] = "5672"
-        os.environ["RABBIT_VHOST"] = "/client"
-        os.environ["RABBIT_QUEUE"] = "client.dev.v1"
-        os.environ["RABBIT_ROUTING"] = "fanout"
-        os.environ["RABBIT_EXCHANGE"] = "client.fanout"
+        os.environ.update({
+            "RABBIT_USER": "client",
+            "RABBIT_PASS": "guest",
+            "RABBIT_HOST": "localhost",
+            "RABBIT_PORT": "5672",
+            "RABBIT_VHOST": "/client",
+            "RABBIT_QUEUE": "client.dev.v1",
+            "RABBIT_ROUTING": "fanout",
+            "RABBIT_EXCHANGE": "client.fanout"
+        })
 
     def testApp(self):
-
         app = AppAsync()
         app.startApp()
 

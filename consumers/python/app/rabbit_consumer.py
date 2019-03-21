@@ -1,6 +1,5 @@
 import pika
 import os
-import time
 
 class RabbitConnectionError(Exception):
     pass
@@ -8,45 +7,35 @@ class RabbitConnectionError(Exception):
 class RabbitConsumerError(Exception):
     pass
 
-MAX_RECONNECTION_ATTEMPT = 20
+MAX_RECONNECTION_ATTEMPT = 5
 
 class RabbitConsumer:
 
     def __init__(self):
-
         self.connecion = None
         self.channel = None
         self.async_connection = None
         self.async_channel = None
-
         self.connection_attempt = 0
+        self.async_connection_attempt = 0
         self.shutting_down = False
-
         try:
-            self.user = os.environ.get("RABBIT_USER", "")
-            self.password = os.environ.get("RABBIT_PASS", "")
-            self.host = os.environ.get("RABBIT_HOST", "")
+            self.user = os.environ.get("RABBIT_USER", None)
+            self.password = os.environ.get("RABBIT_PASS", None)
+            self.host = os.environ.get("RABBIT_HOST", None)
             self.port= int(os.environ.get("RABBIT_PORT", "5672"))
-            self.virtual_host = os.environ.get("RABBIT_VHOST", "")
-            self.queue = os.environ.get("RABBIT_QUEUE", "")
-            self.exchange = os.environ.get("RABBIT_EXCHANGE", "")
-            self.routing_key = os.environ.get("RABBIT_ROUTING", "")
+            self.virtual_host = os.environ.get("RABBIT_VHOST", None)
+            self.queue = os.environ.get("RABBIT_QUEUE", None)
+            self.exchange = os.environ.get("RABBIT_EXCHANGE", None)
+            self.routing_key = os.environ.get("RABBIT_ROUTING", None)
         except ValueError:
             raise ValueError("Check port number")
-
-
-    def acknowledgeMsg(self, ch, method, properties, body):
-
-        print("Rabbit Msg Received %r" % body)
-        ch.basic_ack(delivery_tag = method.delivery_tag)
-
+        except Exception as e:
+            print(e)
+            raise Exception("RabbitMQ consumer failed to initialize")
 
     def connect(self):
-
-        if self.connection_attempt > MAX_RECONNECTION_ATTEMPT:
-            raise Exception("Max reconnection attempt exceeded: exiting")
         try:
-            self.connection_attempt += 1
             credentials = pika.PlainCredentials(
                 self.user,
                 self.password
@@ -56,24 +45,18 @@ class RabbitConsumer:
                 port=self.port,
                 virtual_host=self.virtual_host,
                 credentials=credentials,
-                connection_attempts=10,
+                connection_attempts=MAX_RECONNECTION_ATTEMPT,
                 retry_delay=5
             )
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
         except Exception as e:
             print(e)
-            raise RabbitConnectionError
-
+            raise RabbitConnectionError("RabbitMQ BlockingConnection failed to connect")
 
     def asyncConnect(self):
-
-        if self.connection_attempt > MAX_RECONNECTION_ATTEMPT:
-            raise Exception("Max reconnection attempt exceeded: exiting")
-
         print("connecting async client")
         try:
-            self.connection_attempt += 1
             credentials = pika.PlainCredentials(
                 self.user,
                 self.password
@@ -83,7 +66,7 @@ class RabbitConsumer:
                 port=self.port,
                 virtual_host=self.virtual_host,
                 credentials=credentials,
-                connection_attempts=10,
+                connection_attempts=MAX_RECONNECTION_ATTEMPT,
                 retry_delay=5
             )
             print("Opening connection")
@@ -96,51 +79,34 @@ class RabbitConsumer:
             self.add_on_connection_close_callback()
         except Exception as e:
             print(e)
-            raise RabbitConnectionError("Failed to connect")
-
+            raise RabbitConnectionError("RabbitMQ SelectConnection Failed to connect")
 
     def on_connection_open(self, connection):
-
         self.async_connection = connection
-        self.connection_attempt = 0
         print("opening channel")
         connection.channel(self.on_channel_open)
 
-
     def add_on_connection_close_callback(self):
-
         print('Adding connection close callback')
         self.async_connection.add_on_close_callback(self.on_connection_closed)
 
     def on_connection_closed(self, connection, reply_code, reply_text):
-
         self.async_channel = None
         if self.shutting_down:
             self.async_connection.ioloop.stop()
         else:
             print('Connection closed, reopening in 5 seconds: (%s) %s',
                            reply_code, reply_text)
-            time.sleep(5)
-            self.reconnect()
-
+            self.async_connection.add_timeout(5, self.reconnect)
 
     def reconnect(self):
-
-        self._deliveries = []
-        self._acked = 0
-        self._nacked = 0
-        self._message_number = 0
-
         # This is the old connection IOLoop instance, stop its ioloop
         print("Stopping existing io loop")
         self.async_connection.ioloop.stop()
-
         # Create a new connection
         self.asyncConnect()
-
         # There is now a new connection, needs a new ioloop to run
         self.async_connection.ioloop.start()
-
 
     def add_on_channel_close_callback(self):
         print('Adding channel close callback')
@@ -151,9 +117,7 @@ class RabbitConsumer:
         if not self.shutting_down:
             self.async_connection.close()
 
-
     def on_channel_open(self, channel):
-
         self.async_channel = channel
         self.add_on_channel_close_callback()
         print("Declaring Queue")
@@ -162,26 +126,27 @@ class RabbitConsumer:
             queue=self.queue,
             durable=True
         )
-        channel.basic_consume(
-            self.acknowledgeMsg,
-            queue=self.queue
-        )
+
+    def acknowledgeMsg(self, ch, basic_deliver, properties, body):
+        print('Received message # %s from %s: %s',
+                    basic_deliver.delivery_tag, properties.app_id, body)
+        ch.basic_ack(delivery_tag = basic_deliver.delivery_tag)
 
     def on_queue_declareok(self, method_frame):
-
         print('Binding %s to %s with %s',
                     self.exchange, self.queue, self.routing_key)
         self.async_channel.queue_bind(self.on_bindok, self.queue,
                                  self.exchange, self.routing_key)
 
     def on_bindok(self, unused_frame):
-        print('Queue bound')
-
+        print('Rabbit Queue bound')
+        self.async_channel.basic_consume(
+            self.acknowledgeMsg,
+            queue=self.queue
+        )
 
     def startAsyncConsumer(self):
-
         print("Starting RabbitMQ consumer")
-
         try:
             self.async_connection.ioloop.start()
         except KeyboardInterrupt:
@@ -194,9 +159,7 @@ class RabbitConsumer:
             print(e)
             raise RabbitConnectionError("Async Consumer encountered error")
 
-
     def startBlockingConsumer(self):
-
         if self.channel:
             try:
                 self.channel.queue_declare(
@@ -208,7 +171,6 @@ class RabbitConsumer:
                     queue=self.queue
                 )
                 print("Starting RabbitMQ consumer")
-                self.connection_attempt = 0
                 self.channel.start_consuming()
             except KeyboardInterrupt:
                 print("Received keyboard interrupt, closing consumer")
@@ -226,9 +188,14 @@ class RabbitConsumer:
         else:
             raise RabbitConnectionError("Channel not instantiated")
 
+    def closeAsyncConsumer(self):
+        try:
+            self.async_channel.close()
+            self.async_connection.close()
+        except Exception as e:
+            print(e)
 
     def stopConsumer(self):
-
         if self.channel:
             try:
                 self.channel.basic_cancel()
@@ -239,13 +206,10 @@ class RabbitConsumer:
             raise Exception("Channel not instantiated: No consumer")
 
     def onStopConsumer(self):
-
         print("Closing RabbitMQ Consumer")
         self.closeChannel()
 
-
     def closeChannel(self):
-
         if self.channel:
             try:
                 print("Closing channel")
@@ -256,9 +220,7 @@ class RabbitConsumer:
         else:
             raise Exception("Cannot close uninstantiated channel")
 
-
     def closeConnection(self):
-
         if self.connection:
             try:
                 print("Closing Connection")
