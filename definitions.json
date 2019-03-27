@@ -12,6 +12,12 @@
       "password_hash":"fd0GyzAf6C6hmgCJ5VU+TSyzUNlzypPlGb7VDKkqUvJqVxyd",
       "hashing_algorithm":"rabbit_password_hashing_sha256",
       "tags":"users"
+    },
+    {
+      "name":"ellisdon",
+      "password_hash":"fd0GyzAf6C6hmgCJ5VU+TSyzUNlzypPlGb7VDKkqUvJqVxyd",
+      "hashing_algorithm":"rabbit_password_hashing_sha256",
+      "tags":"users"
     }
   ],
   "vhosts": [
@@ -20,6 +26,9 @@
     },
     {
       "name": "/client"
+    },
+    {
+      "name": "/ellisdon"
     }
   ],
   "permissions":[
@@ -36,17 +45,32 @@
       "configure":".*",
       "write":".*",
       "read":".*"
+    },
+    {
+      "user":"ellisdon",
+      "vhost":"/ellisdon",
+      "configure":".*",
+      "write":".*",
+      "read":".*"
     }
   ],
   "parameters":[],
   "policies":[
     {"vhost":"/","name":"ha","pattern":"", "definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}},
+    {"vhost":"/ellisdon","name":"ha","pattern":"", "definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}},
     {"vhost":"/client","name":"ha","pattern":"", "definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}}
   ],
   "queues":[
     {
       "name":"client.dev.v1",
       "vhost":"/client",
+      "durable":true,
+      "auto_delete":false,
+      "arguments":{}
+    },
+    {
+      "name":"ellisdon.dev.v1",
+      "vhost":"/ellisdon",
       "durable":true,
       "auto_delete":false,
       "arguments":{}
@@ -61,6 +85,15 @@
       "auto_delete":false,
       "internal":false,
       "arguments":{}
+    },
+    {
+      "name":"ellisdon_exchange",
+      "vhost":"/ellisdon",
+      "type":"topic",
+      "durable":true,
+      "auto_delete":false,
+      "internal":false,
+      "arguments":{}
     }
   ],
   "bindings":[
@@ -70,6 +103,14 @@
       "destination":"client.dev.v1",
       "destination_type":"queue",
       "routing_key":"fanout",
+      "arguments":{}
+    },
+    {
+      "source":"ellisdon_exchange",
+      "vhost":"/ellisdon",
+      "destination":"ellisdon.dev.v1",
+      "destination_type":"queue",
+      "routing_key":"ellisdon.direct",
       "arguments":{}
     }
   ]
