@@ -19,20 +19,19 @@ class RabbitConsumer:
         self.connection_attempt = 0
         self.async_connection_attempt = 0
         self.shutting_down = False
+        self.user = os.environ.get("RABBIT_USER", None)
+        self.password = os.environ.get("RABBIT_PASS", None)
+        self.host = os.environ.get("RABBIT_HOST", None)
+        self.virtual_host = os.environ.get("RABBIT_VHOST", None)
+        self.queue = os.environ.get("RABBIT_QUEUE", None)
+        self.exchange = os.environ.get("RABBIT_EXCHANGE", None)
+        self.routing_key = os.environ.get("RABBIT_ROUTING", None)
         try:
-            self.user = os.environ.get("RABBIT_USER", None)
-            self.password = os.environ.get("RABBIT_PASS", None)
-            self.host = os.environ.get("RABBIT_HOST", None)
             self.port= int(os.environ.get("RABBIT_PORT", "5672"))
-            self.virtual_host = os.environ.get("RABBIT_VHOST", None)
-            self.queue = os.environ.get("RABBIT_QUEUE", None)
-            self.exchange = os.environ.get("RABBIT_EXCHANGE", None)
-            self.routing_key = os.environ.get("RABBIT_ROUTING", None)
         except ValueError:
             raise ValueError("Check port number")
-        except Exception as e:
-            print(e)
-            raise Exception("RabbitMQ consumer failed to initialize")
+        if self.user is None or self.virtual_host is None or self.host is None:
+            raise Exception("RabbitMQ consumer failed to initialize host/ virtual_host/ user")
 
     def connect(self):
         try:
@@ -51,8 +50,7 @@ class RabbitConsumer:
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
         except Exception as e:
-            print(e)
-            raise RabbitConnectionError("RabbitMQ BlockingConnection failed to connect")
+            raise RabbitConnectionError("RabbitMQ BlockingConnection failed to connect") from e
 
     def asyncConnect(self):
         print("connecting async client")
@@ -78,8 +76,7 @@ class RabbitConsumer:
             print(self.async_connection)
             self.add_on_connection_close_callback()
         except Exception as e:
-            print(e)
-            raise RabbitConnectionError("RabbitMQ SelectConnection Failed to connect")
+            raise RabbitConnectionError("RabbitMQ SelectConnection Failed to connect") from e
 
     def on_connection_open(self, connection):
         self.async_connection = connection
@@ -150,14 +147,11 @@ class RabbitConsumer:
         try:
             self.async_connection.ioloop.start()
         except KeyboardInterrupt:
-            print("Received keyboard interrupt, closing consumer")
             self.shutting_down = True
             self.async_channel.close()
             self.async_connection.close()
-            print("Closed rabbit consumer")
         except Exception as e:
-            print(e)
-            raise RabbitConnectionError("Async Consumer encountered error")
+            raise RabbitConnectionError("Async Consumer encountered error") from e
 
     def startBlockingConsumer(self):
         if self.channel:
@@ -173,7 +167,6 @@ class RabbitConsumer:
                 print("Starting RabbitMQ consumer")
                 self.channel.start_consuming()
             except KeyboardInterrupt:
-                print("Received keyboard interrupt, closing consumer")
                 self.channel.stop_consuming()
                 self.connection.close()
             except pika.exceptions.ConnectionClosed as e:
@@ -183,8 +176,7 @@ class RabbitConsumer:
                 self.connect()
                 self.startBlockingConsumer()
             except Exception as e:
-                print(e)
-                raise RabbitConsumerError("Blcoking consumer failed to start")
+                raise RabbitConsumerError("Blcoking consumer failed to start") from e
         else:
             raise RabbitConnectionError("Channel not instantiated")
 
@@ -193,40 +185,34 @@ class RabbitConsumer:
             self.async_channel.close()
             self.async_connection.close()
         except Exception as e:
-            print(e)
+            raise RabbitConsumerError("Async consumer graceful shutdown failed")
 
     def stopConsumer(self):
         if self.channel:
             try:
                 self.channel.basic_cancel()
             except Exception as e:
-                print(e)
-                raise RabbitConsumerError
+                raise RabbitConsumerError from e
         else:
             raise Exception("Channel not instantiated: No consumer")
 
     def onStopConsumer(self):
-        print("Closing RabbitMQ Consumer")
         self.closeChannel()
 
     def closeChannel(self):
         if self.channel:
             try:
-                print("Closing channel")
                 self.channel.close()
             except Exception as e:
-                print(e)
-                raise RabbitConnectionError
+                raise RabbitConnectionError from e
         else:
             raise Exception("Cannot close uninstantiated channel")
 
     def closeConnection(self):
         if self.connection:
             try:
-                print("Closing Connection")
                 self.connection.close()
             except Exception as e:
-                print(e)
-                raise e
+                raise RabbitConnectionError from e
         else:
             raise Exception("No connection exists")
