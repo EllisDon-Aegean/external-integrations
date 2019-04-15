@@ -47,4 +47,41 @@ Integration testing requires an active RabbitMQ connection. One way to achieve t
 is to test it using the local RabbitMQ server. Currently, the integration test
 connection parameters are set to local rabbit host.
 
+## Data Payloads
+
+# Submission Data
+Submission data refers to business, finance and health safety data. Following is the example:
+```{
+            "tax_number": 123456789,
+            "files": ["finance_file.txt", "finance_file2.pdf"],
+            "status": "in_review",
+            "sub_name": "Subcontractor",
+            "event": "submission.finance"
+}```
+
+`sub_name` refers to subcontractor name.
+
+# Prequalification Data
+```{
+            "single_contract_limit": 1234515698.0,
+            "aggregate_contract_limit": 12315867912.0,
+            "expiry": 156729456,
+            "tax_number": 12315627128,
+            "sub_name": "Subcontractor",
+            "event": "prequalification.post"
+}```
+
+Here expiry timestamp is the unix timestamp.
+
+# Score Data
+This event is published when Q score is updated:
+```{
+                "q_score": 1.3,
+                "prequalification": {},
+                "sub_name": "subcontractor",
+                "event": "score.update"
+}```
+Here the prequalification refers to the prequalification data containing 
+all the fields in `Prequalification Data` section except the `event` field.
+q_score field refers to the calculated Q score for respective subcontractor.
 
