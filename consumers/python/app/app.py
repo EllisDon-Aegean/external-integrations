@@ -15,7 +15,7 @@ class App:
             self.consumer.connect()
             self.consumer.startBlockingConsumer()
         except Exception as e:
-            print(e)
+            raise Exception("Blocking consumer failed to start") from e
 
     def stopApp(self):
         try:
@@ -23,4 +23,4 @@ class App:
             self.consumer.closeChannel
             self.consumer.closeConnection()
         except Exception as e:
-            print(e)
+            raise Exception("Blocking consumer failed to stop gracefully") from e

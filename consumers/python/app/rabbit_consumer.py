@@ -53,7 +53,7 @@ class RabbitConsumer:
             raise RabbitConnectionError("RabbitMQ BlockingConnection failed to connect") from e
 
     def asyncConnect(self):
-        print("connecting async client")
+        #print("connecting async client")
         try:
             credentials = pika.PlainCredentials(
                 self.user,
@@ -67,24 +67,24 @@ class RabbitConsumer:
                 connection_attempts=MAX_RECONNECTION_ATTEMPT,
                 retry_delay=5
             )
-            print("Opening connection")
+            #print("Opening connection")
             self.async_connection = pika.SelectConnection(
                 parameters,
                 self.on_connection_open,
                 stop_ioloop_on_close=False
             )
-            print(self.async_connection)
+            #print(self.async_connection)
             self.add_on_connection_close_callback()
         except Exception as e:
             raise RabbitConnectionError("RabbitMQ SelectConnection Failed to connect") from e
 
     def on_connection_open(self, connection):
         self.async_connection = connection
-        print("opening channel")
+        #print("opening channel")
         connection.channel(self.on_channel_open)
 
     def add_on_connection_close_callback(self):
-        print('Adding connection close callback')
+        #print('Adding connection close callback')
         self.async_connection.add_on_close_callback(self.on_connection_closed)
 
     def on_connection_closed(self, connection, reply_code, reply_text):
@@ -92,13 +92,13 @@ class RabbitConsumer:
         if self.shutting_down:
             self.async_connection.ioloop.stop()
         else:
-            print('Connection closed, reopening in 5 seconds: (%s) %s',
-                           reply_code, reply_text)
+            #print('Connection closed, reopening in 5 seconds: (%s) %s',
+            #               reply_code, reply_text)
             self.async_connection.add_timeout(5, self.reconnect)
 
     def reconnect(self):
         # This is the old connection IOLoop instance, stop its ioloop
-        print("Stopping existing io loop")
+        #print("Stopping existing io loop")
         self.async_connection.ioloop.stop()
         # Create a new connection
         self.asyncConnect()
@@ -106,18 +106,18 @@ class RabbitConsumer:
         self.async_connection.ioloop.start()
 
     def add_on_channel_close_callback(self):
-        print('Adding channel close callback')
+        #print('Adding channel close callback')
         self.async_channel.add_on_close_callback(self.on_channel_closed)
 
     def on_channel_closed(self, channel, reply_code, reply_text):
-        print('Channel was closed: (%s) %s', reply_code, reply_text)
+        #print('Channel was closed: (%s) %s', reply_code, reply_text)
         if not self.shutting_down:
             self.async_connection.close()
 
     def on_channel_open(self, channel):
         self.async_channel = channel
         self.add_on_channel_close_callback()
-        print("Declaring Queue")
+        #print("Declaring Queue")
         channel.queue_declare(
             callback=self.on_queue_declareok,
             queue=self.queue,
@@ -126,24 +126,24 @@ class RabbitConsumer:
 
     def acknowledgeMsg(self, ch, basic_deliver, properties, body):
         print('Received message # %s from %s: %s',
-                    basic_deliver.delivery_tag, properties.app_id, body)
+                     basic_deliver.delivery_tag, properties.app_id, body)
         ch.basic_ack(delivery_tag = basic_deliver.delivery_tag)
 
     def on_queue_declareok(self, method_frame):
-        print('Binding %s to %s with %s',
-                    self.exchange, self.queue, self.routing_key)
+        #print('Binding %s to %s with %s',
+        #            self.exchange, self.queue, self.routing_key)
         self.async_channel.queue_bind(self.on_bindok, self.queue,
                                  self.exchange, self.routing_key)
 
     def on_bindok(self, unused_frame):
-        print('Rabbit Queue bound')
+        #print('Rabbit Queue bound')
         self.async_channel.basic_consume(
             self.acknowledgeMsg,
             queue=self.queue
         )
 
     def startAsyncConsumer(self):
-        print("Starting RabbitMQ consumer")
+        #print("Starting RabbitMQ consumer")
         try:
             self.async_connection.ioloop.start()
         except KeyboardInterrupt:
@@ -164,14 +164,12 @@ class RabbitConsumer:
                     self.acknowledgeMsg,
                     queue=self.queue
                 )
-                print("Starting RabbitMQ consumer")
+                #print("Starting RabbitMQ consumer")
                 self.channel.start_consuming()
             except KeyboardInterrupt:
                 self.channel.stop_consuming()
                 self.connection.close()
             except pika.exceptions.ConnectionClosed as e:
-                print(e)
-                print("Connection closed: Reconnecting in 5 seconds")
                 time.sleep(5)
                 self.connect()
                 self.startBlockingConsumer()

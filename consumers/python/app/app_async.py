@@ -15,4 +15,4 @@ class AppAsync:
             self.consumer.asyncConnect()
             self.consumer.startAsyncConsumer()
         except Exception as e:
-            print(e)
+            raise Exception("Async consumer failed to start") from e
