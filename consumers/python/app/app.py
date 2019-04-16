@@ -1,8 +1,8 @@
 import os
 import sys
-from consumers.python.app.rabbit_consumer import RabbitConsumer
-from consumers.python.app.rabbit_consumer import RabbitConnectionError
-from consumers.python.app.rabbit_consumer import RabbitConsumerError
+from consumers.python.app.base_consumer import BaseConsumer
+from consumers.python.app.base_consumer import BaseConnectionError
+from consumers.python.app.base_consumer import BaseConsumerError
 
 class App:
 
@@ -11,7 +11,7 @@ class App:
 
     def startApp(self):
         try:
-            self.consumer = RabbitConsumer()
+            self.consumer = BaseConsumer()
             self.consumer.connect()
             self.consumer.startBlockingConsumer()
         except Exception as e:
