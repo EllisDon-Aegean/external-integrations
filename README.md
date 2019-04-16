@@ -46,6 +46,24 @@ respective virtual host.
 Deciding on whether to use docker container or not depends solely on the 
 discretion of the end user.
 
+## Connection Types
+
+This app allows connecting to rabbit mq server using either the blocking or asynchronous 
+connection. By default, the docker setup uses asynchronous connection however the user
+can choose to use blocking connection also. 
+
+To use blocking connection, the python command looks like the following:
+
+`python3 -m consumers.python.consume`
+
+To use asynchronous connection, the python command looks like the following:
+
+`python3 -m consumer.python.consume_async`
+
+The benefits of using either one depends on the use case. If the consumer application is 
+based on asynchronous architecture then the asynchronous connection provides a non blocking
+way of connecting to the rabbit server. On the other hand, for a simple non asynchronous design
+the blocking connection will suffice.
 
 ## Data Payloads
 
