@@ -28,8 +28,8 @@ class RabbitConsumer:
         self.routing_key = os.environ.get("RABBIT_ROUTING", None)
         try:
             self.port= int(os.environ.get("RABBIT_PORT", "5672"))
-        except ValueError:
-            raise ValueError("Check port number")
+        except ValueError as ve:
+            raise RabbitConsumerError("Check port number") from ve
         if self.user is None or self.virtual_host is None or self.host is None:
             raise Exception("RabbitMQ consumer failed to initialize host/ virtual_host/ user")
 

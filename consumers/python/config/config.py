@@ -1,11 +1,13 @@
 import os
 
 def setConfig():
-    os.environ["RABBIT_USER"] = "client"
-    os.environ["RABBIT_PASS"] = "guest"
-    os.environ["RABBIT_HOST"] = "rabbit"
-    os.environ["RABBIT_PORT"] = "5672"
-    os.environ["RABBIT_VHOST"] = "/client"
-    os.environ["RABBIT_QUEUE"] = "integration"
-    os.environ["RABBIT_ROUTING"] = "client.prequal"
-    os.environ["RABBIT_EXCHANGE"] = "integration"
+    os.environ.update({
+        "RABBIT_USER": "client",
+        "RABBIT_PASS": "guest",
+        "RABBIT_HOST": "rabbit",
+        "RABBIT_PORT": "5672",
+        "RABBIT_VHOST": "/client",
+        "RABBIT_QUEUE": "integration",
+        "RABBIT_ROUTING": "client.prequal",
+        "RABBIT_EXCHANGE": "integration"
+    })
