@@ -58,7 +58,7 @@ To use blocking connection, the python command looks like the following:
 
 To use asynchronous connection, the python command looks like the following:
 
-`python3 -m consumer.python.consume_async`
+`python3 -m consumers.python.consume_async`
 
 The benefits of using either one depends on the use case. If the consumer application is 
 based on asynchronous architecture then the asynchronous connection provides a non blocking
